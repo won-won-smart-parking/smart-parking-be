@@ -1,0 +1,16 @@
+{
+  "exclude": ["node_modules"],
+  "include": ["**/*.ts"],
+  "compilerOptions": {
+    "typeRoots": ["./node_modules/@types"],
+    "module": "es6",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "baseUrl": "./src",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true
+  }
+}
