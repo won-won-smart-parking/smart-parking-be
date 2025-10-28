@@ -8,7 +8,8 @@
     "start": "nodemon",
     "prepare": "husky install",
     "env": "tsx ./scripts/index.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint:strict": "expo lint -- --cache --cache-location .eslintcache --max-warnings=0"
   },
   "lint-staged": {
     "**/*.ts": [
