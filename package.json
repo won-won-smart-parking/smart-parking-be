@@ -9,6 +9,7 @@
     "prepare": "husky install",
     "env": "tsx ./scripts/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "format": "prettier --check .",
     "lint:strict": "eslint --cache --cache-location .eslintcache --max-warnings=0",
     "audit": "audit-ci --config ./audit-ci.jsonc"
   },
