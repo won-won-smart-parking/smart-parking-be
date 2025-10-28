@@ -1,0 +1,191 @@
+name: pull_request-ci
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".husky/**"
+
+# Github Actions 권한 부여
+permissions:
+  contents: read # 파일 접근 권한 -> 읽기만 가능
+  pull-requests: write # PR 접근 권한 -> 리뷰 작성 가능
+  checks: write # 코드 파일 접근 권한 -> 작성 가능 (코드 파일 옆에 라인으로 댓글을 남김)
+
+# 동일한 PR에 커밋을 연달아 올릴 때, 기존에 돌던 워크플로우를 자동 취소해줌
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+# Pull Request 시 검증해야 하는 작업 목록
+jobs:
+  pr-quality:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 코드 체크아웃
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Git safe.directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      # 2. Node.js 설정 (22.18.0 + yarn 캐시) 단계
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.18.0" # 프로젝트 Node 버전 맞춤
+          cache: "yarn"
+
+      # 3. yarn 버전 고정 및 확인 (1.22.22) 단계
+      - run: corepack enable
+      - run: corepack prepare yarn@1.22.22 --activate
+      - run: yarn --version
+
+      # 4. Yarn 의존성 설치 및 안정성 검증 단계
+      #  -> --frozen-lockfile: package.json과 yarn.lock 의존성 설치 정보가 불일치할 경우 PR 실패
+      #  -> --network-timeout: 느린 네트워크 속도로 인한 간헐적 실패 완하 (10분)
+      - name: Install Dependencies
+        run: HUSKY=0 yarn install --frozen-lockfile --network-timeout 600000
+
+      # # 5. 환경 변수 유효성 검증 단계
+
+      # 6. TypeScript Compiler 타입 체크 단계
+      - name: TypeScript Typecheck
+        run: yarn typecheck 2> ts-error-report.txt
+
+      # 7. 의존성 점검 검증 단계
+      - name: Dependency Audit
+        run: yarn audit
+
+      ### 의존성 리포트 생성 (검증 단계에서 같이 하면 yarn audit:ci 실패 시 리포트 생성 안됨)
+      - name: Generate dependency audit report
+        run: yarn audit --json | jq -s '.' > dependency-audit-report.json || true
+
+      # 9. ESLint 규칙 검증(경고도 실패 처리)
+      - name: ESLint
+        run: yarn lint:strict -f json -o eslint-report.json
+
+      # 10. Prettier 포맷팅 검증 단계
+      - name: Prettier Formatting
+        run: yarn format
+
+      # 11. 리포트 & 커버리지 보고서 업로드 (PR 실패 시에도 항상 업로드)
+      - name: Upload ESLint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eslint-report
+          path: eslint-report.json
+          if-no-files-found: ignore
+          retention-days: 3
+
+      - name: Upload TypeScript errors
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ts-error-report
+          path: ts-error-report.txt
+          if-no-files-found: ignore
+          retention-days: 3
+
+      # - name: Upload env check report
+
+      - name: Upload dependency audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-report
+          path: dependency-audit-report.json
+          if-no-files-found: ignore
+          retention-days: 3
+
+  code-review:
+    needs: pr-quality
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download ESLint report
+        uses: actions/download-artifact@v4
+        with:
+          name: eslint-report
+          path: reports
+        continue-on-error: true
+
+      - name: Download TypeScript errors
+        uses: actions/download-artifact@v4
+        with:
+          name: ts-error-report
+          path: reports
+        continue-on-error: true
+
+      # - name: Download Env check report
+
+      - name: Download dependency audit report
+        uses: actions/download-artifact@v4
+        with:
+          name: dependency-audit-report
+          path: reports
+        continue-on-error: true
+
+      - name: Compose markdown from reports
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = (f) => `reports/${f}`;
+          const readJSON = (file) => { try { return JSON.parse(fs.readFileSync(file,'utf8')); } catch { return null; } };
+          const readTXT  = (file) => { try { return fs.readFileSync(file,'utf8'); } catch { return ''; } };
+          const exists   = (file) => fs.existsSync(file);
+
+          # // 1) Env Check
+          # const envReport = readJSON(p('env-report.json'));
+          # const envErrCnt = envReport?.errors?.length ?? 0;
+          # const envStatus = envReport?.ok === false ? `❌ Fail (${envErrCnt} errors)` : '✅ Pass';
+
+          // 2) TypeScript
+          const tsTxt = readTXT(p('ts-error-report.txt'));
+          const tsErrors = tsTxt.trim() ? (tsTxt.split('\n').filter(Boolean).length) : 0;
+          const tsStatus = tsErrors === 0 ? '✅ Pass (0 errors)' : `❌ Fail (${tsErrors} lines)`;
+
+          // 3) ESLint
+          const eslint = readJSON(p('eslint-report.json')) || [];
+          const eslintIssues = Array.isArray(eslint) ? eslint.reduce((sum,f)=> sum + (f.messages?.length||0), 0) : 0;
+          const eslintStatus = eslintIssues === 0 ? '✅ Pass (0 issues)' : `❌ Fail (${eslintIssues} issues)`;
+
+          // 4) Dependency (npm audit)
+          const audit = readJSON(p('dependency-audit-report.json')) || {};
+          const vuln = audit.metadata?.vulnerabilities || audit.vulnerabilities || {};
+          const totals = {
+            critical: vuln.critical || 0, high: vuln.high || 0,
+            moderate: vuln.moderate || 0, low: vuln.low || 0, info: vuln.info || 0
+          };
+          const totalV = totals.critical + totals.high + totals.moderate + totals.low + totals.info;
+          const depStatus = totalV === 0
+            ? '✅ Pass (0)'
+            : `⚠️ ${totalV} vulns (crit:${totals.critical}, high:${totals.high}, mod:${totals.moderate})`;
+
+          // 7) Markdown
+          let md = '';
+          md += '## 📊 PR 품질 요약\n\n';
+          md += '### 🧾 분석 결과\n';
+          md += '| 항목 | 상태 |\n|------|------|\n';
+          # md += `| Env Check  | ${envStatus} |\n`;
+          md += `| TypeScript | ${tsStatus} |\n`;
+          md += `| ESLint     | ${eslintStatus} |\n`;
+          md += `| Dependency | ${depStatus} |\n\n`;
+          md += '### 📈 Coverage\n';
+          md += coverageTable + '\n\n';
+          md += '> 상세 리포트는 GitHub Actions **Artifacts**에서 확인하세요.\n';
+
+          fs.writeFileSync('pr-comment.md', md);
+          NODE
+
+      - name: Post sticky PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: "PR Quality Report"
+          path: pr-comment.md
