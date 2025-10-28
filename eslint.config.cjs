@@ -1,5 +1,7 @@
 const { defineConfig } = require("eslint/config");
+
 const prettierConfig = require("eslint-config-prettier");
+const typescriptParser = require("@typescript-eslint/parser");
 
 // ESLint 전체 설정 구성
 module.exports = defineConfig([
@@ -9,6 +11,7 @@ module.exports = defineConfig([
 
     // 언어 해석 방식 지정
     languageOptions: {
+      parser: typescriptParser,
       // parser: require.resolve("@typescript-eslint/parser"), // 타입스크립트 해석기 등록
       parserOptions: {
         ecmaVersion: 2022,
