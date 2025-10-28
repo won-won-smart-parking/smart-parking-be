@@ -141,11 +141,6 @@ jobs:
           const readTXT  = (file) => { try { return fs.readFileSync(file,'utf8'); } catch { return ''; } };
           const exists   = (file) => fs.existsSync(file);
 
-          # // 1) Env Check
-          # const envReport = readJSON(p('env-report.json'));
-          # const envErrCnt = envReport?.errors?.length ?? 0;
-          # const envStatus = envReport?.ok === false ? `❌ Fail (${envErrCnt} errors)` : '✅ Pass';
-
           // 2) TypeScript
           const tsTxt = readTXT(p('ts-error-report.txt'));
           const tsErrors = tsTxt.trim() ? (tsTxt.split('\n').filter(Boolean).length) : 0;
@@ -173,7 +168,6 @@ jobs:
           md += '## 📊 PR 품질 요약\n\n';
           md += '### 🧾 분석 결과\n';
           md += '| 항목 | 상태 |\n|------|------|\n';
-          # md += `| Env Check  | ${envStatus} |\n`;
           md += `| TypeScript | ${tsStatus} |\n`;
           md += `| ESLint     | ${eslintStatus} |\n`;
           md += `| Dependency | ${depStatus} |\n\n`;
