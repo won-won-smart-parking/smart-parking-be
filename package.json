@@ -9,6 +9,12 @@
     "prepare": "husky install",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "lint-staged": {
+    "**/*.ts": [
+      "eslint --cache --cache-location .eslintcache",
+      "prettier --write"
+    ]
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {

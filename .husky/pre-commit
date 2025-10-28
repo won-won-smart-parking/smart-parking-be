@@ -13,4 +13,5 @@ else
   echo "✅ 스테이징된 파일이 없습니다. gitleaks 스킵."
 fi
 
-yarn typecheck          # 타입 체크 (tsconfig.json 기반)
+yarn typecheck    # 타입 체크 (tsconfig.json 기반)
+npx lint-staged   # 변경된 파일만 lint-staged 스크립트 수행
