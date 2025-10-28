@@ -1,1 +1,17 @@
 #!/usr/bin/env sh
+
+# 1. 브랜치 패턴 검사
+BRANCH_NAME=$(git symbolic-ref --short HEAD)
+echo "$BRANCH_NAME" | grep -Eq '^(main|release|dev|hotfix|docs|feat/[a-z0-9._/-]+|fix/[a-z0-9._/-]+|refactor/[a-z0-9._/-]+|test/[a-z0-9._/-]+|chore/[a-z0-9._/-]+)$' \
+  || { echo "🚫 브랜치 이름 잘못 작성함!!"; exit 1; }
+
+# 2. 시크릿 키 검증
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "⚠️ gitleaks가 설치되어 있지 않아 시크릿 스캔을 건너뜁니다."
+  echo "   설치 방법: macOS → brew install gitleaks / Windows → choco install gitleaks"
+  exit 1
+else
+  echo "pre-push / 시크릿 키 검증..."
+  gitleaks detect --no-git --source . --redact --no-banner
+fi
+
