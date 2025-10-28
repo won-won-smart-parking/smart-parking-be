@@ -3,3 +3,4 @@ eslint.config.js
 **/*.cjs
 .eslintcache
 audit-ci.jsonc
+**/*.md
