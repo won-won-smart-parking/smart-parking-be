@@ -6,7 +6,8 @@
   "main": "./src/server.js",
   "scripts": {
     "start": "nodemon",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "author": "",
   "license": "ISC",

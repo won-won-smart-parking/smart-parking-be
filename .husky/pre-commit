@@ -1,0 +1,16 @@
+# gitleaks 설치 여부 확인
+command -v gitleaks >/dev/null || {
+  echo "⚠️ gitleaks가 설치되어 있지 않아 시크릿 스캔을 건너뜁니다."
+  echo "   설치 방법: macOS → brew install gitleaks / Windows → choco install gitleaks"
+  exit 1
+}
+
+# 시크릿 키 검사
+if git diff --cached --name-only | grep -q .; then
+  echo "▶ 스테이징된 파일에 대해 gitleaks로 시크릿 스캔을 실행합니다..."
+  gitleaks protect --staged --redact --no-banner
+else
+  echo "✅ 스테이징된 파일이 없습니다. gitleaks 스킵."
+fi
+
+yarn typecheck          # 타입 체크 (tsconfig.json 기반)
