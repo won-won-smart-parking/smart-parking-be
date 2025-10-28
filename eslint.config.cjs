@@ -7,7 +7,7 @@ const typescriptParser = require("@typescript-eslint/parser");
 module.exports = defineConfig([
   {
     files: ["**/*.ts"], // 적용할 파일(glob 패턴)을 지정
-    ignores: ["**/node_modules/**", "**/dist/**", "**/build**"], // 린트에서 제외할 파일(또는 폴더)을 지정
+    ignores: ["**/node_modules/**", "**/dist/**", "**/build**", "audit-ci.jsonc"], // 린트에서 제외할 파일(또는 폴더)을 지정
 
     // 언어 해석 방식 지정
     languageOptions: {

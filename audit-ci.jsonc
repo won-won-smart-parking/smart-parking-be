@@ -1,0 +1,16 @@
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  
+  // 예외 목록
+  // - 2025.010.28 기준, 예외 패키지 목록은 존재하지 않지만, 나중에 추가하기 위해 빈 배열로 작성
+  "allowlist": [
+
+  ],
+  
+  "high": true,               // 의존성 보안 취약점 심각도 종류 (high 이상 심각도 발견 시 빌드 실패)
+  "output-format": "text",    // 보고서 출력 형식 (기본값으로 설정했지만 명시적으로 작성)
+  "report-type": "summary",   // 보고서 요약 수준
+  "package-manager": "yarn",  // 패키지 매니저 Yarn으로 강제 지정
+  "skip-dev": false,          // 개발 의존성 보안 취약점 제외 여부 (기본값으로 설정했지만 명시적으로 작성)
+  "pass-enoaudit": false      // 감사 수행 불가(ENOAUDIT) 시 통과 처리 여부 (기본값으로 설정했지만 명시적으로 작성)
+}

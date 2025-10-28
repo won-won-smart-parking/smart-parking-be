@@ -2,3 +2,4 @@ eslint.config.js
 .husky
 **/*.cjs
 .eslintcache
+audit-ci.jsonc
