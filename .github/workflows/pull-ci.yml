@@ -172,7 +172,6 @@ jobs:
           md += `| ESLint     | ${eslintStatus} |\n`;
           md += `| Dependency | ${depStatus} |\n\n`;
           md += '### 📈 Coverage\n';
-          md += coverageTable + '\n\n';
           md += '> 상세 리포트는 GitHub Actions **Artifacts**에서 확인하세요.\n';
 
           fs.writeFileSync('pr-comment.md', md);
