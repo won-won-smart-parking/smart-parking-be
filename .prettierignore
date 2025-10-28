@@ -3,3 +3,10 @@ eslint.config.js
 **/*.cjs
 .eslintcache
 audit-ci.jsonc
+**/*.md
+
+# 리포트 산출물 제외
+*.report.json
+eslint-report.json
+# env-report.json
+dependency-audit-report.json
