@@ -5,13 +5,13 @@
     "typeRoots": ["./node_modules/@types"],
     "target": "es6",
     "module": "es6",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "baseUrl": "./src",
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   }
 }
