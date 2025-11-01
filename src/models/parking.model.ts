@@ -11,7 +11,7 @@ interface ParkingCreationAttributes extends Optional<ParkingAttributes, "id"> {}
 
 // 모델 정의
 export default class Parking extends Model<ParkingAttributes, ParkingCreationAttributes> implements ParkingAttributes {
-  public id!: string;
+  declare id: string;
 }
 
 // 초기화

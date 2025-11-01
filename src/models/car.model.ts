@@ -15,9 +15,9 @@ interface CarCreationAttributes extends Optional<CarAttributes, "id"> {}
 
 // 3. 모델 클래스 정의
 export default class Car extends Model<CarAttributes, CarCreationAttributes> implements CarAttributes {
-  public id!: string;
-  public user_id!: string;
-  public car_number!: string;
+  declare id: string;
+  declare user_id: string;
+  declare car_number: string;
 }
 
 // 4. 모델 초기화

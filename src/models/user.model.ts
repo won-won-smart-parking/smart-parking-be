@@ -18,14 +18,14 @@ interface UserCreationAttributes extends Optional<UserAttributes, "id"> {} //
 
 // User 모델 정의
 export default class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
-  public id!: string;
-  public email!: string;
-  public password!: string;
-  public profileUrl!: string | null;
-  public name!: string;
-  public birth!: Date;
-  public isLocationAgreed!: boolean;
-  public isAlarmAgreed!: boolean;
+  declare id: string;
+  declare email: string;
+  declare password: string;
+  declare profileUrl: string | null;
+  declare name: string;
+  declare birth: Date;
+  declare isLocationAgreed: boolean;
+  declare isAlarmAgreed: boolean;
 }
 
 // User 테이블 초기화

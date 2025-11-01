@@ -16,12 +16,12 @@ export interface TicketAttributes {
 interface TicketCreationAttributes extends Optional<TicketAttributes, "id"> {}
 
 export default class Ticket extends Model<TicketAttributes, TicketCreationAttributes> implements TicketAttributes {
-  public id!: string;
-  public user_id!: string;
-  public parking_id!: string;
-  public start_date!: Date;
-  public end_date!: Date;
-  public type!: "daily" | "subscription";
+  declare id: string;
+  declare user_id: string;
+  declare parking_id: string;
+  declare start_date: Date;
+  declare end_date: Date;
+  declare type: "daily" | "subscription";
 }
 
 Ticket.init(

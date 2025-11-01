@@ -16,9 +16,9 @@ export default class Bookmark
   extends Model<BookmarkAttributes, BookmarkCreationAttributes>
   implements BookmarkAttributes
 {
-  public id!: string;
-  public user_id!: string;
-  public parking_id!: string;
+  declare id: string;
+  declare user_id: string;
+  declare parking_id: string;
 }
 
 Bookmark.init(
