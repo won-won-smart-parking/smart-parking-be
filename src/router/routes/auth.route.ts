@@ -141,7 +141,8 @@ router.post("/sign-in", async (req, res) => {
   ----------------------------------------------------
   로그아웃 API 설계
   ----------------------------------------------------
-  - Authroization 안 보낸 경우 -> 401 Unauthorized + 
+  - Authroization 안 보낸 경우 -> 401 Unauthorized + SIGN_OUT_FAILD_AUTH_MISSING 응답 반환
+  - 로그아웃 성공 시 -> 200 OK + SIGN_OUT_SUCCESS 응답 반환
 */
 router.post("/sign-out", async (req, res) => {
   try {
