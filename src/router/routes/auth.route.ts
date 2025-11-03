@@ -1,6 +1,7 @@
 import express from "express";
 import type { SignInRequestBodyType, SignUpRequestBodyType } from "types/auth.type.ts";
-import { AuthApiError } from "@supabase/supabase-js";
+import { success } from "zod";
+import { AuthApiError, AuthError } from "@supabase/supabase-js";
 import { supabase, upload } from "../../configs/index.ts";
 import { uploadProfileImage } from "../../utils/signUp.ts";
 
@@ -134,6 +135,60 @@ router.post("/sign-in", async (req, res) => {
       error,
     });
   }
+});
+
+/*
+  ----------------------------------------------------
+  로그아웃 API 설계
+  ----------------------------------------------------
+  - Authroization 안 보낸 경우 -> 401 Unauthorized + 
+*/
+router.post("/sign-out", async (req, res) => {
+  try {
+    const headers = req.headers.authorization;
+
+    // Bearer 인증 헤더를 보내지 않은 경우
+    if (!headers || !headers.startsWith("Bearer")) {
+      return res.status(401).json({
+        code: "SIGN_OUT_FAILD_AUTH_MISSING",
+        message: "인증 토큰이 존재하지 않습니다.",
+        success: false,
+      });
+    }
+
+    // Supabase에 등록한 토큰을 무효화 시킨다.
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw error;
+    }
+
+    return res.status(200).json({
+      code: "SIGN_OUT_SUCCESS",
+      message: "로그아웃이 완료되었습니다.",
+      success: true,
+    });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return res.status(error.status || 500).json({
+        code: error.code,
+        errorType: "AuthError",
+        message: error.message,
+        success: false,
+      });
+    }
+
+    return res.status(500).json({
+      code: "SIGN_OUT_ERROR",
+      errorType: "Server",
+      success: false,
+      error,
+    });
+  }
+});
+
+router.get("/logged", async (req, res) => {
+  const { data } = await supabase.auth.getUser();
+  res.json(data);
 });
 
 export default router;
