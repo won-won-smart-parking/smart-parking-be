@@ -94,19 +94,24 @@ router.post("/sign-in", async (req, res) => {
     const { email, password } = req.body as SignInRequestBodyType;
 
     // Supabase Auth를 통한 로그인 시도
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     // 사용자 정보가 없거나, 비밀번호가 일치하지 않아 로그인 실패 시 실패 응답을 반환한다.
-    if (error) {
-      console.log(error);
+    if (signInError) {
       return res.status(401).json({
         code: "SIGN_IN_FAILED",
         message: "아이디 또는 비밀번호가 일치하지 않습니다.",
         success: false,
       });
+    }
+
+    // 로그인 된 값을 바탕으로 일부 사용자 정보를 요청한다. + 에러가 발생 시 예외를 발생시킨다.
+    const { data: userProfile, error } = await supabase.from("users").select("profileImageUrl").eq("id", signInData.user.id).single();
+    if (error) {
+      throw error;
     }
 
     // 로그인 성공 시 -> Supabase에서 발급한 Access Token + Refresh Token을 통해 응답 결과를 반환한다.
@@ -115,10 +120,11 @@ router.post("/sign-in", async (req, res) => {
       message: "로그인에 성공했습니다.",
       success: true,
       body: {
-        id: data.user.id,
-        email: data.user.email,
-        accessToken: data.session.access_token,
-        refreshToken: data.session.refresh_token,
+        id: signInData.user.id,
+        email: signInData.user.email,
+        profilImageUrl: userProfile.profileImageUrl,
+        accessToken: signInData.session.access_token,
+        refreshToken: signInData.session.refresh_token,
       },
     });
   } catch (error) {
@@ -129,39 +135,5 @@ router.post("/sign-in", async (req, res) => {
     });
   }
 });
-
-// router.post("/sign-in", async (req, res) => {
-//   const { email, password } = req.body as { email: string; password: string };
-
-//   // Sequelize Model로 정의한 User 테이블에서 이메일에 일치한 사용자 정보를 가져온다.
-//   const user = await User.findOne({
-//     where: {
-//       email,
-//     },
-//     attributes: ["id", "email", "password"],
-//   });
-
-//   // 사용자 정보가 존재하는 경우 -> 비밀번호 일치 여부를 확인한다.
-// const isPasswordMatch = await comparePassword(password, user.password); -> 회원가입 이후 bcrypt 정확히 수행 후 리팩토링
-//   if (password !== user.password) {
-//     return res.status(401).json({
-//       code: "SIGN_IN_FAILED",
-//       message: "아이디 또는 비밀번호가 일치하지 않습니다.",
-//       success: false,
-//     });
-//   }
-
-//   // 사용자 정보가 존재하면서 비밀번호까지 일치한 경우 성공 응답을 전송한다.
-//   return res.status(200).json({
-//     code: "SIGN_IN_SUCCESS",
-//     message: "로그인에 성공했습니다.",
-//     success: true,
-//     body: {
-//       id: user.id,
-//       accessToken: "accessToken",
-//       refreshToken: "refreshToken",
-//     },
-//   });
-// });
 
 export default router;

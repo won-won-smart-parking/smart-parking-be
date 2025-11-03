@@ -6,3 +6,8 @@ export type SignUpRequestBodyType = {
   isLocationAgreed: boolean;
   isAlarmAgreed: boolean;
 };
+
+export type SignInRequestBodyType = {
+  email: string;
+  password: string;
+};
