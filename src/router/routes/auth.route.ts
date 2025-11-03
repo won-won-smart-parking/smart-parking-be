@@ -1,6 +1,5 @@
 import express from "express";
 import type { SignInRequestBodyType, SignUpRequestBodyType } from "types/auth.type.ts";
-import { success } from "zod";
 import { AuthApiError, AuthError } from "@supabase/supabase-js";
 import { supabase, upload } from "../../configs/index.ts";
 import { uploadProfileImage } from "../../utils/signUp.ts";
@@ -37,6 +36,7 @@ router.post("/sign-up", upload.single("profileImage"), async (req, res) => {
     // 위 절차가 모두 에러 없이 통과한 경우 Supabase DB에 유저 정보를 추가한다.
     const { error } = await supabase.from("users").insert({
       id: data.user?.id,
+      email: newUserInfo.email,
       name: newUserInfo.name,
       birth: newUserInfo.birth,
       profileImageUrl,
@@ -185,6 +185,19 @@ router.post("/sign-out", async (req, res) => {
       error,
     });
   }
+});
+
+/* */
+router.patch("/reset-password", async (req, res) => {
+  const { id, password } = req.body;
+
+  const data = await supabase.auth.admin.updateUserById(id, {
+    password,
+  });
+
+  console.log(data);
+
+  res.send(200);
 });
 
 router.get("/logged", async (req, res) => {
