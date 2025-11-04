@@ -1,3 +1,5 @@
 node_modules
 .env
 .eslintcache
+uploads/
+.DS_Store
