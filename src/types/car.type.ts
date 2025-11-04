@@ -3,4 +3,5 @@ export type CreateCarRequestBodyType = {
   number: string;
 };
 
-export type DeleteCarParamType = string;
+export type DynamicPathCarIdType = string;
+export type UpdateCarRequestBodyType = Partial<CreateCarRequestBodyType> & { main?: boolean };

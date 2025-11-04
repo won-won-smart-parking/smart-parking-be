@@ -1,7 +1,7 @@
 import express from "express";
 import { supabase } from "../../configs/index.ts";
 import { accessTokenMiddleware } from "../../middleware/auth.middleware.ts";
-import type { CreateCarRequestBodyType, DeleteCarParamType } from "../../types/car.type.ts";
+import type { CreateCarRequestBodyType, DynamicPathCarIdType, UpdateCarRequestBodyType } from "../../types/car.type.ts";
 
 const router = express.Router();
 
@@ -55,7 +55,7 @@ router.post("/", accessTokenMiddleware, async (req, res) => {
 
   try {
     // 1. 사용자가 등록한 차량 개수가 최대 개수를 넘어간 경우
-    const { count } = await supabase.from("car").select("*").eq("user_id", userId);
+    const { count } = await supabase.from("car").select("*", { count: "exact", head: true }).eq("user_id", userId);
     if ((count ?? 0) >= 3) {
       return res.status(409).json({
         code: "CAR_LIMIT_EXCEEDED",
@@ -66,9 +66,10 @@ router.post("/", accessTokenMiddleware, async (req, res) => {
 
     // 2. 최대 개수를 넘어가지 않았을 경우에는 정상적으로 차량을 등록한다.
     const { error } = await supabase.from("car").insert({
+      user_id: userId,
       car_name: name,
       car_number: number,
-      main: count === 0,
+      main: !count,
     });
 
     if (error) throw error;
@@ -97,7 +98,7 @@ router.post("/", accessTokenMiddleware, async (req, res) => {
   - 위 조건 모두 통과 시 -> 200 OK + SIGN_UP_SUCCESS 반환
 */
 router.delete("/:id", accessTokenMiddleware, async (req, res) => {
-  const carId = req.params.id as DeleteCarParamType;
+  const carId = req.params.id as DynamicPathCarIdType;
 
   try {
     const { error } = await supabase.from("car").delete().eq("id", carId);
@@ -126,8 +127,42 @@ router.delete("/:id", accessTokenMiddleware, async (req, res) => {
   - Supabase 관련 -> 실패 시 500 Internal Server Error + SIGN_UP_ERROR 반환
   - 위 조건 모두 통과 시 -> 200 OK + SIGN_UP_SUCCESS 반환
 */
-router.patch("/:id", (req, res) => {
-  res.send("Hello, Car Route!!");
+router.patch("/:id", accessTokenMiddleware, async (req, res) => {
+  const [userId, carId, { name, number, main }] = [req.user?.id, req.params.id, req.body] as [
+    string,
+    DynamicPathCarIdType,
+    UpdateCarRequestBodyType,
+  ];
+
+  try {
+    // 대표 차량도 같이 수정한 경우 -> 기존 대표 차량을 일반 차량으로 변경한다.
+    if (main) {
+      await supabase.from("car").update({ main: false }).eq("user_id", userId).eq("main", true);
+    }
+
+    const { error } = await supabase
+      .from("car")
+      .update({
+        car_name: name,
+        car_number: number,
+        main,
+      })
+      .eq("id", carId);
+
+    if (error) throw error; // 자동차 정보 수정 과정에서 에러가 발생한 경우
+    return res.status(200).json({
+      code: "CAR_UPDATE_SUCCESS",
+      message: "차량 정보가 정상적으로 수정되었습니다.",
+      success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: "CAR_UPDATE_ERROR",
+      message: "서버 내부 과정에서 오류가 발생했습니다.",
+      success: false,
+      error,
+    });
+  }
 });
 
 export default router;
