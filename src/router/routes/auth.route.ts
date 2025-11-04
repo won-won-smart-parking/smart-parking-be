@@ -1,5 +1,6 @@
 import express from "express";
 import type { SignInRequestBodyType, SignUpRequestBodyType } from "types/auth.type.ts";
+import { success } from "zod";
 import { AuthApiError, AuthError } from "@supabase/supabase-js";
 import { supabase, upload } from "../../configs/index.ts";
 import { uploadProfileImage } from "../../utils/signUp.ts";
@@ -187,17 +188,45 @@ router.post("/sign-out", async (req, res) => {
   }
 });
 
-/* */
+/*
+  ----------------------------------------------------
+  비밀번호 초기화 API 설계
+  ----------------------------------------------------
+  - 비밀번호 초기화 성공 시 -> 200 OK + PASSWORD_CHANGE_SUCCESS
+  - 비밀번호 초기화 실패 시 -> 500 OK + PASSWORD_CHANGE_ERROR
+*/
 router.patch("/reset-password", async (req, res) => {
   const { id, password } = req.body;
 
-  const data = await supabase.auth.admin.updateUserById(id, {
-    password,
-  });
+  try {
+    const { error } = await supabase.auth.admin.updateUserById(id, {
+      password,
+    });
 
-  console.log(data);
+    if (error) throw error;
 
-  res.send(200);
+    return res.status(200).json({
+      code: "PASSWORD_CHANGE_SUCCESS",
+      success: true,
+      message: "비밀번호가 성공적으로 수정되었습니다.",
+    });
+  } catch (error) {
+    if (error instanceof AuthError && error.status) {
+      return res.status(error.status).json({
+        code: error.code,
+        message: error.message,
+        success: false,
+        errorType: "AuthError",
+      });
+    }
+
+    return res.status(500).json({
+      code: "PASSWORD_CHANGE_ERROR",
+      success: false,
+      errorType: "Server",
+      error,
+    });
+  }
 });
 
 router.get("/logged", async (req, res) => {
