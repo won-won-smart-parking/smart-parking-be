@@ -1,7 +1,7 @@
 import express from "express";
 import { supabase } from "../../configs/index.ts";
 import { accessTokenMiddleware } from "../../middleware/auth.middleware.ts";
-import { CreateCarRequestBodyType } from "../../types/car.type.ts";
+import type { CreateCarRequestBodyType, DeleteCarParamType } from "../../types/car.type.ts";
 
 const router = express.Router();
 
@@ -96,8 +96,26 @@ router.post("/", accessTokenMiddleware, async (req, res) => {
   - Supabase 관련 -> 실패 시 500 Internal Server Error + SIGN_UP_ERROR 반환
   - 위 조건 모두 통과 시 -> 200 OK + SIGN_UP_SUCCESS 반환
 */
-router.delete("/:id", (req, res) => {
-  res.send("Hello, Car Route!!");
+router.delete("/:id", accessTokenMiddleware, async (req, res) => {
+  const carId = req.params.id as DeleteCarParamType;
+
+  try {
+    const { error } = await supabase.from("car").delete().eq("id", carId);
+
+    if (error) throw error; // 자동차 삭제 과정에서 에러가 발생한 경우
+    return res.status(200).json({
+      code: "CAR_DELETE_SUCCESS",
+      message: "등록하신 차량이 정삭적으로 제거되었습니다.",
+      success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: "CAR_DELETE_ERROR",
+      message: "서버 내부 과정에서 오류가 발생했습니다.",
+      success: false,
+      error,
+    });
+  }
 });
 
 /*
