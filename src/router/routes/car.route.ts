@@ -46,9 +46,6 @@ router.get("/", accessTokenMiddleware, async (req, res) => {
   ----------------------------------------------------
   자동차 등록 API
   ----------------------------------------------------
-  - 이메일 중복 유무 확인 -> 실패 시 409 Conflict + SIGN_UP_EMAIL_DUPLICATE 반환
-  - Supabase 관련 -> 실패 시 500 Internal Server Error + SIGN_UP_ERROR 반환
-  - 위 조건 모두 통과 시 -> 200 OK + SIGN_UP_SUCCESS 반환
 */
 router.post("/", accessTokenMiddleware, async (req, res) => {
   const [userId, { name, number }] = [req.user?.id, req.body] as [string, CreateCarRequestBodyType];
@@ -93,9 +90,6 @@ router.post("/", accessTokenMiddleware, async (req, res) => {
   ----------------------------------------------------
   자동차 삭제 API
   ----------------------------------------------------
-  - 이메일 중복 유무 확인 -> 실패 시 409 Conflict + SIGN_UP_EMAIL_DUPLICATE 반환
-  - Supabase 관련 -> 실패 시 500 Internal Server Error + SIGN_UP_ERROR 반환
-  - 위 조건 모두 통과 시 -> 200 OK + SIGN_UP_SUCCESS 반환
 */
 router.delete("/:id", accessTokenMiddleware, async (req, res) => {
   const carId = req.params.id as DynamicPathCarIdType;
@@ -123,9 +117,6 @@ router.delete("/:id", accessTokenMiddleware, async (req, res) => {
   ----------------------------------------------------
   자동차 수정 API
   ----------------------------------------------------
-  - 이메일 중복 유무 확인 -> 실패 시 409 Conflict + SIGN_UP_EMAIL_DUPLICATE 반환
-  - Supabase 관련 -> 실패 시 500 Internal Server Error + SIGN_UP_ERROR 반환
-  - 위 조건 모두 통과 시 -> 200 OK + SIGN_UP_SUCCESS 반환
 */
 router.patch("/:id", accessTokenMiddleware, async (req, res) => {
   const [userId, carId, { name, number, main }] = [req.user?.id, req.params.id, req.body] as [
@@ -153,6 +144,46 @@ router.patch("/:id", accessTokenMiddleware, async (req, res) => {
     return res.status(200).json({
       code: "CAR_UPDATE_SUCCESS",
       message: "차량 정보가 정상적으로 수정되었습니다.",
+      success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: "CAR_UPDATE_ERROR",
+      message: "서버 내부 과정에서 오류가 발생했습니다.",
+      success: false,
+      error,
+    });
+  }
+});
+
+/*
+  ----------------------------------------------------
+  자동차 대표 차량 변경 API
+  ----------------------------------------------------
+*/
+router.patch("/main/:id", accessTokenMiddleware, async (req, res) => {
+  const [userId, carId] = [req.user?.id, req.params.id] as [string, DynamicPathCarIdType];
+
+  try {
+    // 1. 사용자가 등록한 차량 개수가 1개 이하인 경우
+    const { count } = await supabase.from("car").select("*", { count: "exact", head: true }).eq("user_id", userId);
+    if ((count ?? 0) <= 1) {
+      return res.status(409).json({
+        code: "CAR_MAIN_UPDATE_CONFLICT",
+        message: "등록하신 차량이 1개 이하이기 때문에 대표 차량을 변경하지 못합니다.",
+        success: false,
+      });
+    }
+
+    // 2. 사용자가 등록한 차량 개수가 2개 이상인 경우
+    const { error: orignalCarMainUpdateError } = await supabase.from("car").update({ main: false }).eq("user_id", userId).eq("main", true);
+    const { error: carMainUpdateError } = await supabase.from("car").update({ main: true }).eq("car_id", carId);
+
+    if (orignalCarMainUpdateError || carMainUpdateError) throw orignalCarMainUpdateError ?? carMainUpdateError;
+
+    return res.status(200).json({
+      code: "CAR_MAIN_UPDATE_SUCCESS",
+      message: "대표 차량이 정상적으로 변경되었습니다.",
       success: true,
     });
   } catch (error) {
