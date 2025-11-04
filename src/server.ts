@@ -1,5 +1,4 @@
 import express from "express";
-import "./configs/sequelize.ts";
 import router from "./router/index.ts";
 
 const app = express();

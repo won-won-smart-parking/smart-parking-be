@@ -1,5 +1,4 @@
 import express from "express";
-import { success } from "zod";
 import { PostgrestError } from "@supabase/supabase-js";
 import { supabase } from "../../configs/index.ts";
 

@@ -1,6 +1,5 @@
 import express from "express";
 import type { SignInRequestBodyType, SignUpRequestBodyType } from "types/auth.type.ts";
-import { success } from "zod";
 import { AuthApiError, AuthError } from "@supabase/supabase-js";
 import { supabase, upload } from "../../configs/index.ts";
 import { uploadProfileImage } from "../../utils/signUp.ts";
