@@ -50,7 +50,43 @@ router.get("/", accessTokenMiddleware, async (req, res) => {
   - Supabase 관련 -> 실패 시 500 Internal Server Error + SIGN_UP_ERROR 반환
   - 위 조건 모두 통과 시 -> 200 OK + SIGN_UP_SUCCESS 반환
 */
-router.post("/", accessTokenMiddleware, async (req, res) => {});
+router.post("/", accessTokenMiddleware, async (req, res) => {
+  const [userId, { name, number }] = [req.user?.id, req.body] as [string, CreateCarRequestBodyType];
+
+  try {
+    // 1. 사용자가 등록한 차량 개수가 최대 개수를 넘어간 경우
+    const { count } = await supabase.from("car").select("*").eq("user_id", userId);
+    if ((count ?? 0) >= 3) {
+      return res.status(409).json({
+        code: "CAR_LIMIT_EXCEEDED",
+        message: "차량은 최대 3개까지만 등록 가능합니다.",
+        success: false,
+      });
+    }
+
+    // 2. 최대 개수를 넘어가지 않았을 경우에는 정상적으로 차량을 등록한다.
+    const { error } = await supabase.from("car").insert({
+      car_name: name,
+      car_number: number,
+      main: count === 0,
+    });
+
+    if (error) throw error;
+
+    return res.status(201).json({
+      code: "CAR_CREATE_SUCCESS",
+      message: "입력하신 차량이 성공적으로 등록되었습니다.",
+      success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: "CAR_CREATE_ERROR",
+      message: "서버 내부 과정에서 오류가 발생했습니다.",
+      success: false,
+      error,
+    });
+  }
+});
 
 /*
   ----------------------------------------------------
